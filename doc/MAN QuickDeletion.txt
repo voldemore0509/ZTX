@@ -1,0 +1,6 @@
+MAN QuickDeletion
+Error code
+0 = No problem
+1 = Path not found
+2 = Allocation Mémoire 
+3 = Succes Free
