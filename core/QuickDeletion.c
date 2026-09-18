@@ -14,12 +14,20 @@ int cst(char *path){
     return i;
 }
 
-int road_construction(char *path , char *dir , char *name , char **out){
-    int size_fille = 0;
+int dpbotss(char *path , int size){  //Deletion process based on the specified size
     DIR *d = opendir(path);
     if(d == NULL){  //verifie si le dossier s'ouvre
-        return size_fille + 1;  //erreur
+        return 1;  //erreur
     }
+    int i = 0;
+    DIR *return_reddir = readdir(d);
+    while( != NULL){
+        if(i > size){
+        }
+        i ++;
+    }
+    closedir(d);
+    return 0;
 }
 
 int modularity(char *path,char **out){
