@@ -14,6 +14,14 @@ int cst(char *path){
     return i;
 }
 
+int road_construction(char *path , char *dir , char *name , char **out){
+    int size_fille = 0;
+    DIR *d = opendir(path);
+    if(d == NULL){  //verifie si le dossier s'ouvre
+        return size_fille + 1;  //erreur
+    }
+}
+
 int modularity(char *path,char **out){
     char *writingpath = malloc(sizeof(char)*100);
     int result_cst = cst(path);

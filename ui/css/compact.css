@@ -1,0 +1,108 @@
+/* ============================================================
+   ZTX — compact.css
+   Mode "Compressé" (data-compact="on" sur <html>)
+   ------------------------------------------------------------
+   Objectif : interface la plus légère possible.
+   - Toutes les animations et transitions coupées
+   - Glass forcé en teinte noire (couleur non modifiable)
+   - Slider Liquid Glass + choix de thème + Premium : verrouillés visuellement
+   - Padding réduit, gradients de fond simplifiés
+   ============================================================ */
+
+/* ---------- Coupe toutes les animations et transitions ---------- */
+html[data-compact="on"],
+html[data-compact="on"] *,
+html[data-compact="on"] *::before,
+html[data-compact="on"] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+}
+
+/* Cas particulier : les keyframes qui laissent l'élément visible à leur point
+   d'arrivée fonctionnaient grâce au fill-mode "both". On force la visibilité
+   à la main pour ne pas perdre les cartes. */
+html[data-compact="on"] .welcome-card,
+html[data-compact="on"] .dropdown {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Le ripple JS génère un span animé : on le neutralise. */
+html[data-compact="on"] .ripple {
+  display: none !important;
+}
+
+/* ---------- Glass forcé en noir ---------- */
+html[data-compact="on"] {
+  /* Teinte noire fixe, indépendante du thème et du slider */
+  --glass-tint: rgba(0, 0, 0, 0.82);
+  /* Blur léger fixe pour rester perf-first tout en gardant l'effet */
+  --glass-blur: 10px;
+  --glass-saturate: 110%;
+  /* Fonds unis (plus de radial-gradient) */
+  --bg-primary: #000000;
+  --bg-secondary: #050505;
+  --bg-elevated: rgba(10, 10, 10, 0.85);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text-primary: #e6e8ec;
+  --text-secondary: #9ba1ac;
+  --text-muted: #6a6f78;
+  --accent: #6ea8ff;
+  --accent-glow: rgba(110, 168, 255, 0.25);
+  --shadow-elev: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Fond du body : uni noir, plus de radial-gradient (économie GPU) */
+html[data-compact="on"] body {
+  background: #000000 !important;
+}
+
+/* Glass : effet conservé mais reflet interne retiré (allègement) */
+html[data-compact="on"] .glass-surface::before {
+  display: none !important;
+}
+
+/* ---------- Verrouillage visuel des réglages non-applicables ---------- */
+/* Le sélecteur data-lock-in-compact marque les rangées à griser :
+   thème, slider glass, premium. Le clic reste possible (pas de disabled)
+   mais l'UI signale qu'ils sont inertes tant que Compact est ON. */
+html[data-compact="on"] [data-lock-in-compact] {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+
+/* ---------- Allègement du padding et de la card d'accueil ---------- */
+html[data-compact="on"] .app-main {
+  padding: 16px;
+}
+html[data-compact="on"] .welcome-card {
+  padding: 24px 32px;
+  box-shadow: var(--shadow-soft);
+}
+html[data-compact="on"] .welcome-title {
+  font-size: 40px;
+  letter-spacing: 0.03em;
+  /* Titre en couleur unie (plus de background-clip transparent, léger) */
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  color: var(--text-primary);
+}
+
+/* ---------- Le halo pulsé du logo Premium est coupé (animation) ---------- */
+html[data-compact="on"] .app-logo {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+/* ---------- Menu items : plus d'overflow ripple ---------- */
+html[data-compact="on"] .menu-item,
+html[data-compact="on"] .win-btn,
+html[data-compact="on"] .seg-btn {
+  overflow: visible;
+}

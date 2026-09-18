@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark" data-glass="medium" data-compact="off" data-maxbtn="off">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZTX</title>
+
+  <!-- Styles : ordre volontaire (variables -> base -> composants -> thèmes -> effets -> animations -> compact) -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <link rel="stylesheet" href="css/liquid-glass.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/compact.css" />
+</head>
+<body>
+  <!-- ============================================================
+       Barre de titre (window chrome)
+       ============================================================ -->
+  <header class="titlebar glass-surface" role="banner">
+    <!-- Bloc gauche : logo + onglets menu -->
+    <div class="titlebar-left">
+      <div class="app-logo" aria-label="ZTX">
+        <img id="app-logo-img" src="img/ZTX_Logo_Default.png" alt="Logo ZTX" />
+      </div>
+
+      <nav class="menubar" role="menubar" aria-label="Menu principal">
+        <button class="menu-item" data-menu="file"     role="menuitem" data-i18n="menu.file">Fichier</button>
+        <button class="menu-item" data-menu="settings" role="menuitem" data-i18n="menu.settings">Paramètres</button>
+        <button class="menu-item" data-menu="terminal" role="menuitem" data-i18n="menu.terminal">Terminal</button>
+        <button class="menu-item" data-menu="help"     role="menuitem" data-i18n="menu.help">Aide</button>
+      </nav>
+    </div>
+
+    <!-- Bloc central : zone déplaçable (drag natif pywebview).
+         IMPORTANT : PAS de pointer-events:none ici, sinon pywebview ne
+         reçoit pas le mousedown et le drag ne fonctionne pas. -->
+    <div class="titlebar-drag pywebview-drag-region" aria-hidden="true">
+      <span class="app-title">ZTX</span>
+    </div>
+
+    <!-- Bloc droit : contrôles de fenêtre.
+         Le bouton "agrandir" est masqué par défaut (data-maxbtn="off" sur <html>). -->
+    <div class="window-controls" role="group" aria-label="Contrôles fenêtre">
+      <button class="win-btn win-min"   id="btn-minimize"  aria-label="Réduire" data-i18n-title="win.minimize" title="Réduire">
+        <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="win-btn win-max"   id="btn-maximize"  aria-label="Agrandir" data-i18n-title="win.maximize" title="Agrandir">
+        <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><rect x="2.5" y="2.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button class="win-btn win-close" id="btn-close"     aria-label="Fermer" data-i18n-title="win.close" title="Fermer">
+        <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       Menus déroulants
+       ============================================================ -->
+
+  <!-- Menu Fichier -->
+  <div id="dropdown-file" class="dropdown glass-surface" role="menu" hidden>
+    <button class="menu-action" data-action="open-local-folder" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 4a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      <span data-i18n="file.openLocation">Voir l'emplacement local</span>
+    </button>
+  </div>
+
+  <!-- Menu Terminal (encore vide) -->
+  <div id="dropdown-terminal" class="dropdown glass-surface" role="menu" hidden></div>
+
+  <!-- Menu Aide -->
+  <div id="dropdown-help" class="dropdown glass-surface" role="menu" hidden>
+    <button class="menu-action" data-action="contact-dev" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 4h12v8H2z M2 4l6 4 6-4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <span data-i18n="help.contactDev">Contacter le développeur</span>
+    </button>
+    <button class="menu-action" data-action="faq" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6.5 6.5a1.5 1.5 0 0 1 3 0c0 1-1.5 1.2-1.5 2.2M8 11.5v.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>
+      <span data-i18n="help.faq">FAQ</span>
+    </button>
+    <button class="menu-action" data-action="help-page" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 2h7l3 3v9H3z M10 2v3h3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <span data-i18n="help.page">Page d'aide</span>
+    </button>
+  </div>
+
+  <!-- Menu Paramètres -->
+  <div id="dropdown-settings" class="dropdown dropdown-settings glass-surface" role="menu" hidden>
+    <!-- Couleur -->
+    <div class="setting-row" data-lock-in-compact>
+      <label class="setting-label" data-i18n="settings.theme">Couleur</label>
+      <div class="segmented" role="radiogroup" aria-label="Thème">
+        <button class="seg-btn active" data-theme-choice="dark"  role="radio" aria-checked="true"  data-i18n="settings.theme.dark">Sombre</button>
+        <button class="seg-btn"        data-theme-choice="light" role="radio" aria-checked="false" data-i18n="settings.theme.light">Claire</button>
+      </div>
+    </div>
+
+    <!-- Liquid Glass -->
+    <div class="setting-row" data-lock-in-compact>
+      <label class="setting-label" for="glass-slider" data-i18n="settings.glass">Liquid Glass</label>
+      <div class="slider-wrap">
+        <span class="slider-tick" data-i18n="settings.glass.off">Off</span>
+        <input type="range" id="glass-slider" min="0" max="100" value="50" step="1" aria-label="Intensité Liquid Glass" />
+        <span class="slider-tick" data-i18n="settings.glass.max">Max</span>
+      </div>
+    </div>
+
+    <!-- Langue -->
+    <div class="setting-row">
+      <label class="setting-label" data-i18n="settings.language">Langue</label>
+      <div class="segmented segmented-scroll" role="radiogroup" aria-label="Langue">
+        <button class="seg-btn active" data-lang-choice="fr" role="radio" aria-checked="true">Français</button>
+        <button class="seg-btn"        data-lang-choice="en" role="radio" aria-checked="false">English</button>
+        <button class="seg-btn"        data-lang-choice="es" role="radio" aria-checked="false">Español</button>
+        <button class="seg-btn"        data-lang-choice="zh" role="radio" aria-checked="false">中文</button>
+        <button class="seg-btn"        data-lang-choice="ja" role="radio" aria-checked="false">日本語</button>
+        <button class="seg-btn"        data-lang-choice="vi" role="radio" aria-checked="false">Tiếng Việt</button>
+        <button class="seg-btn"        data-lang-choice="lo" role="radio" aria-checked="false">ລາວ</button>
+        <button class="seg-btn"        data-lang-choice="hi" role="radio" aria-checked="false">हिन्दी</button>
+      </div>
+    </div>
+
+    <div class="setting-divider" aria-hidden="true"></div>
+
+    <!-- Bouton Agrandir : toggle qui affiche/cache le bouton dans la titlebar -->
+    <div class="setting-row">
+      <label class="setting-label" data-i18n="settings.maxbtn">Bouton Agrandir</label>
+      <label class="switch" aria-label="Afficher le bouton Agrandir">
+        <input type="checkbox" id="maxbtn-toggle" />
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+      </label>
+    </div>
+
+    <!-- Mode Compressé : coupe animations, allège tout, glass noir fixe -->
+    <div class="setting-row">
+      <label class="setting-label" data-i18n="settings.compact">Compressé</label>
+      <label class="switch" aria-label="Activer le mode compressé">
+        <input type="checkbox" id="compact-toggle" />
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+      </label>
+    </div>
+
+    <div class="setting-divider" aria-hidden="true"></div>
+
+    <!-- Premium Edition -->
+    <div class="setting-row premium-row" data-lock-in-compact>
+      <div class="premium-label">
+        <span class="premium-badge">★</span>
+        <span data-i18n="settings.premium">Premium Edition</span>
+      </div>
+      <label class="switch" aria-label="Activer Premium Edition">
+        <input type="checkbox" id="premium-toggle" />
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Zone de contenu principale (placeholder pour l'instant)
+       ============================================================ -->
+  <main class="app-main" role="main">
+    <div class="welcome-card glass-surface">
+      <h1 class="welcome-title">ZTX</h1>
+      <p class="welcome-subtitle" data-i18n="welcome.subtitle">
+        Comprendre la machine plutôt que la masquer.
+      </p>
+      <p class="welcome-tag" data-i18n="welcome.tag">
+        Interface v0.1 — Luminescence AI
+      </p>
+    </div>
+  </main>
+
+  <!-- ============================================================
+       Scripts : ordre volontaire, du plus bas niveau au plus haut
+       ============================================================ -->
+  <!-- Traductions (chargées en objets globaux, aucun fetch requis) -->
+  <script src="js/locales/fr.js"></script>
+  <script src="js/locales/en.js"></script>
+  <script src="js/locales/es.js"></script>
+  <script src="js/locales/zh.js"></script>
+  <script src="js/locales/ja.js"></script>
+  <script src="js/locales/vi.js"></script>
+  <script src="js/locales/lo.js"></script>
+  <script src="js/locales/hi.js"></script>
+
+  <!-- Modules utilitaires -->
+  <script src="js/storage.js"></script>
+  <script src="js/i18n.js"></script>
+
+  <!-- Gestionnaires de features -->
+  <script src="js/theme-manager.js"></script>
+  <script src="js/liquid-glass-manager.js"></script>
+  <script src="js/premium.js"></script>
+  <script src="js/compact-mode.js"></script>
+  <script src="js/max-button.js"></script>
+  <script src="js/window-controls.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/file-menu.js"></script>
+  <script src="js/help-menu.js"></script>
+  <script src="js/settings.js"></script>
+
+  <!-- Point d'entrée -->
+  <script src="js/app.js"></script>
+</body>
+</html>

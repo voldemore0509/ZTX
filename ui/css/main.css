@@ -1,0 +1,518 @@
+/* ============================================================
+   ZTX — main.css
+   Reset, variables globales, layout de base, composants
+   ============================================================ */
+
+/* ---------- Reset minimal ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system,
+    Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ---------- Variables globales (défaut = thème sombre) ---------- */
+:root {
+  /* Fond principal (dégradé subtil) */
+  --bg-primary: #0b0d10;
+  --bg-secondary: #12151a;
+  --bg-elevated: rgba(24, 27, 33, 0.72);
+
+  /* Bordures et séparateurs */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Textes */
+  --text-primary: #e6e8ec;
+  --text-secondary: #9ba1ac;
+  --text-muted: #6a6f78;
+
+  /* Accents */
+  --accent: #6ea8ff;
+  --accent-glow: rgba(110, 168, 255, 0.35);
+  --danger: #ff5f57;
+
+  /* Liquid Glass (contrôlé par slider — 0 = off, 30 = max) */
+  --glass-blur: 14px;
+  --glass-saturate: 140%;
+  --glass-tint: rgba(20, 22, 27, 0.55);
+
+  /* Metrics */
+  --titlebar-h: 40px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Ombres */
+  --shadow-elev: 0 8px 30px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.25);
+
+  /* Vitesse d'animation */
+  --dur-fast: 120ms;
+  --dur-med: 220ms;
+  --dur-slow: 400ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* ---------- Body / fond animé ---------- */
+body {
+  color: var(--text-primary);
+  background:
+    radial-gradient(1200px 700px at 15% -10%, rgba(110, 168, 255, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 110% 20%, rgba(180, 120, 255, 0.06), transparent 60%),
+    linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  transition: background var(--dur-slow) var(--ease), color var(--dur-med) var(--ease);
+}
+
+/* ============================================================
+   Barre de titre
+   ------------------------------------------------------------
+   Layout flex à 3 colonnes : [ left | drag(flex:1) | controls ]
+   La zone drag est un vrai élément cliquable (pas de pointer-events:none)
+   pour que pywebview-drag-region reçoive le mousedown.
+   ============================================================ */
+.titlebar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--titlebar-h);
+  padding: 0 6px 0 10px;
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 100;
+  gap: 6px;
+}
+
+.titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 8px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.titlebar-drag {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  /* CLASSE OFFICIELLE pywebview : autorise le drag natif sur WebView2/Windows.
+     La classe pywebview-drag-region (posée sur le HTML de l'élément) suffit —
+     pywebview injecte un handler mousedown qui déclenche le drag Windows.
+     -webkit-app-region: drag ; garde une compatibilité Electron/Tauri. */
+  -webkit-app-region: drag;
+  cursor: default;
+  /* IMPORTANT : PAS de pointer-events:none — sinon pywebview ne reçoit rien */
+}
+
+.app-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  font-weight: 500;
+  pointer-events: none; /* Le titre ne doit pas bloquer le drag, mais son parent reste actif */
+}
+
+/* Logo */
+.app-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: transform var(--dur-med) var(--ease),
+    box-shadow var(--dur-med) var(--ease);
+}
+.app-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Menubar (Fichier, Paramètres, Terminal, Aide) */
+.menubar {
+  display: flex;
+  gap: 2px;
+}
+.menu-item {
+  position: relative;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+.menu-item.active {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text-primary);
+}
+.menu-item:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Contrôles de fenêtre (min / max / close) */
+.window-controls {
+  display: flex;
+  gap: 2px;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+.win-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  transition: background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.win-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+.win-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.win-btn:active {
+  transform: scale(0.94);
+}
+
+/* Le bouton "Agrandir" est caché par défaut ; on l'affiche seulement quand
+   data-maxbtn="on" est posé sur <html> (via le toggle des Paramètres). */
+html[data-maxbtn="off"] #btn-maximize {
+  display: none;
+}
+
+/* ============================================================
+   Dropdowns (menus déroulants sous la titlebar)
+   ============================================================ */
+.dropdown {
+  position: absolute;
+  top: calc(var(--titlebar-h) + 6px);
+  width: 240px;                        /* largeur explicite (fix Bug width) */
+  max-width: calc(100vw - 20px);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-elev);
+  z-index: 50;
+  transform-origin: top left;
+  animation: dropdown-in var(--dur-med) var(--ease) both;
+  box-sizing: border-box;
+}
+.dropdown[hidden] {
+  display: none !important;
+}
+
+/* Le panneau Paramètres est plus large que les autres dropdowns */
+.dropdown-settings {
+  width: 400px;
+  padding: 10px;
+}
+
+/* Actions cliquables dans les menus (Fichier / Aide) */
+.menu-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.menu-action:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.menu-action:active {
+  transform: scale(0.98);
+}
+.menu-action svg {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+.menu-action:hover svg {
+  color: var(--accent);
+}
+
+/* Lignes de setting */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease);
+  min-width: 0;              /* autorise les enfants flex à rétrécir */
+}
+.setting-row > * {
+  min-width: 0;
+}
+.setting-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.setting-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.setting-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 8px 0;
+}
+
+/* Segmented control (Sombre/Claire, langues) */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+/* Variante "scroll" : autorise le débordement horizontal (langues nombreuses) */
+.segmented-scroll {
+  max-width: 260px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+.segmented-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.segmented-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+.seg-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.seg-btn:hover {
+  color: var(--text-primary);
+}
+.seg-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+/* Slider Liquid Glass */
+.slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 200px;
+  flex-shrink: 0;
+}
+.slider-tick {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.18));
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 0 1px var(--border-strong), 0 0 10px var(--accent-glow);
+  cursor: grab;
+  transition: transform var(--dur-fast) var(--ease);
+}
+input[type="range"]::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.15);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--bg-primary);
+  cursor: grab;
+}
+
+/* Toggle switch premium */
+.premium-row {
+  padding: 12px 8px;
+}
+.premium-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.premium-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  transition: background var(--dur-med) var(--ease), color var(--dur-med) var(--ease);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+}
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.switch-track {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  transition: background var(--dur-med) var(--ease);
+}
+.switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #e6e8ec;
+  border-radius: 50%;
+  transition: transform var(--dur-med) var(--ease),
+    background var(--dur-med) var(--ease);
+}
+.switch input:checked + .switch-track {
+  background: linear-gradient(90deg, #b8860b, #ffd700);
+}
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translateX(18px);
+  background: #fff8dc;
+}
+
+/* Toggle "Mode compressé" & "Bouton Agrandir" : bleu accent au lieu d'or,
+   pour éviter la confusion visuelle avec Premium. */
+#compact-toggle:checked + .switch-track,
+#maxbtn-toggle:checked + .switch-track {
+  background: var(--accent);
+}
+#compact-toggle:checked + .switch-track .switch-thumb,
+#maxbtn-toggle:checked + .switch-track .switch-thumb {
+  background: #fff;
+}
+
+/* ============================================================
+   Zone principale
+   ============================================================ */
+.app-main {
+  height: calc(100vh - var(--titlebar-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.welcome-card {
+  padding: 40px 60px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  text-align: center;
+  box-shadow: var(--shadow-elev);
+  max-width: 520px;
+}
+.welcome-title {
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  background: linear-gradient(180deg, var(--text-primary), var(--text-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 12px;
+}
+.welcome-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.welcome-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 20px;
+}

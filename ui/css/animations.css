@@ -1,0 +1,107 @@
+/* ============================================================
+   ZTX — animations.css
+   Animations globales : dropdown, hover, ripple, premium
+   ============================================================ */
+
+/* ---------- Dropdown apparition ---------- */
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- Shimmer doré (mode premium, titre) ---------- */
+@keyframes gold-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* ---------- Halo pulsé sur logo premium ---------- */
+@keyframes premium-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(255, 215, 0, 0.6);
+    transform: scale(1.03);
+  }
+}
+
+html[data-premium="on"] .app-logo {
+  animation: premium-glow 3.5s ease-in-out infinite;
+}
+
+/* ---------- Ripple effect (généré par JS) ---------- */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-anim 500ms var(--ease);
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+html[data-premium="on"] .ripple {
+  background: rgba(255, 215, 0, 0.5);
+}
+@keyframes ripple-anim {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Les boutons cibles du ripple ont besoin d'overflow hidden */
+.menu-item,
+.win-btn,
+.seg-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------- Fade in de la card de bienvenue ---------- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.welcome-card {
+  animation: fade-up var(--dur-slow) var(--ease) both;
+}
+
+/* ---------- Transition douce du thème global ---------- */
+html {
+  transition: background var(--dur-slow) var(--ease);
+}
+
+/* ---------- Hover premium sur le logo ---------- */
+.app-logo:hover {
+  transform: rotate(-6deg) scale(1.06);
+}
+
+/* ---------- Réduction de motion (accessibilité) ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

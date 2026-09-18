@@ -1,0 +1,62 @@
+/* ============================================================
+   ZTX — liquid-glass.css
+   Effet Liquid Glass (verre dépoli translucide)
+   Piloté par --glass-blur (défini par le slider) via JS.
+   La classe .glass-surface applique automatiquement le blur courant.
+   ============================================================ */
+
+.glass-surface {
+  background: var(--glass-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  transition:
+    background var(--dur-med) var(--ease),
+    backdrop-filter var(--dur-med) var(--ease),
+    -webkit-backdrop-filter var(--dur-med) var(--ease),
+    border-color var(--dur-med) var(--ease);
+}
+
+/* Reflets internes pour rendre le verre "vivant" */
+.glass-surface {
+  position: relative;
+}
+.glass-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0) 40%
+  );
+  opacity: 0.7;
+  transition: opacity var(--dur-med) var(--ease);
+}
+
+/* Mode "no-glass" : quand le slider est au minimum, on désactive le blur
+   pour économiser du GPU et rester net */
+html[data-glass="off"] .glass-surface {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-elevated);
+}
+html[data-glass="off"] .glass-surface::before {
+  opacity: 0.3;
+}
+
+/* Bonus premium : liseré doré sur les surfaces vitrées */
+html[data-premium="on"] .glass-surface {
+  border-color: rgba(255, 215, 0, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 0, 0.08) inset,
+    0 6px 24px rgba(0, 0, 0, 0.4);
+}
+html[data-premium="on"] .glass-surface::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 215, 0, 0.10) 0%,
+    rgba(255, 215, 0, 0) 45%
+  );
+}
