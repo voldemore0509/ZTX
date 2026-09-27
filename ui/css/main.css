@@ -83,6 +83,11 @@ img {
 
 /* ---------- Body / fond animé ---------- */
 body {
+  /* Colonne flex : titlebar + zone principale.
+     Aucune unité vh dans le layout — les vh ignorent le zoom CSS,
+     ce qui casserait le réglage "Taille du logiciel" (voir ui-scale.js). */
+  display: flex;
+  flex-direction: column;
   color: var(--text-primary);
   background:
     radial-gradient(1200px 700px at 15% -10%, rgba(110, 168, 255, 0.08), transparent 60%),
@@ -132,14 +137,6 @@ body {
   -webkit-app-region: drag;
   cursor: default;
   /* IMPORTANT : PAS de pointer-events:none — sinon pywebview ne reçoit rien */
-}
-
-.app-title {
-  font-size: 12px;
-  color: var(--text-muted);
-  letter-spacing: 0.14em;
-  font-weight: 500;
-  pointer-events: none; /* Le titre ne doit pas bloquer le drag, mais son parent reste actif */
 }
 
 /* Logo */
@@ -476,43 +473,11 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ============================================================
-   Zone principale
+   Zone principale (contenu détaillé dans workspace.css)
    ============================================================ */
 .app-main {
-  height: calc(100vh - var(--titlebar-h));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-}
-
-.welcome-card {
-  padding: 40px 60px;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-subtle);
-  text-align: center;
-  box-shadow: var(--shadow-elev);
-  max-width: 520px;
-}
-.welcome-title {
-  font-size: 56px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  background: linear-gradient(180deg, var(--text-primary), var(--text-secondary));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-bottom: 12px;
-}
-.welcome-subtitle {
-  font-size: 15px;
-  color: var(--text-secondary);
-  margin-bottom: 6px;
-}
-.welcome-tag {
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-top: 20px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
 }

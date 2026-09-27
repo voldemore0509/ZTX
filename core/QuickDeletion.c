@@ -15,15 +15,15 @@ int cst(char *path){
 }
 
 int dpbotss(char *path , int size){  //Deletion process based on the specified size
-    DIR *d = opendir(path);
+    struct dirent *d = opendir(path);
     if(d == NULL){  //verifie si le dossier s'ouvre
         return 1;  //erreur
     }
     int i = 0;
-    DIR *return_reddir = readdir(d);
-    while( != NULL){
+    while((return_reddir = readdir(d)) != NULL){
         if(i > size){
         }
+        DIR *return_reddir = readdir(d);
         i ++;
     }
     closedir(d);

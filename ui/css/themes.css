@@ -93,20 +93,6 @@ html[data-premium="on"] body {
     linear-gradient(180deg, #0a0806 0%, #14100a 100%);
 }
 
-html[data-premium="on"] .welcome-title {
-  background: linear-gradient(135deg, #fff8dc 0%, #ffd700 40%, #b8860b 80%, #fff8dc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  background-size: 200% 200%;
-  animation: gold-shimmer 4s ease-in-out infinite;
-}
-
-html[data-premium="on"] .app-title {
-  color: #d4b878;
-  letter-spacing: 0.18em;
-}
-
 html[data-premium="on"] .menu-item {
   color: #d4b878;
 }
@@ -148,12 +134,4 @@ html[data-premium="on"] input[type="range"]::-webkit-slider-thumb {
   background: #ffd700;
   border-color: #14100a;
   box-shadow: 0 0 0 1px #b8860b, 0 0 14px rgba(255, 215, 0, 0.7);
-}
-
-html[data-premium="on"] .welcome-card {
-  border-color: rgba(255, 215, 0, 0.25);
-  box-shadow:
-    0 0 0 1px rgba(255, 215, 0, 0.1) inset,
-    0 8px 40px rgba(255, 215, 0, 0.12),
-    0 4px 24px rgba(0, 0, 0, 0.5);
 }

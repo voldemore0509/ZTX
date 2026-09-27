@@ -10,6 +10,13 @@
 
   const DEFAULT_LANG = "fr";
   const SUPPORTED = ["fr", "en", "es", "zh", "ja", "vi", "lo", "hi"];
+
+  /* Langue des messages techniques (terminal IHM).
+     Convention du métier : un journal d'exécution se lit en anglais,
+     quelle que soit la langue de l'interface. Les clés "log.*" ne
+     vivent donc QUE dans locales/en.js. */
+  const TECH_LANG = "en";
+
   let currentLang = DEFAULT_LANG;
 
   function translate(key, lang) {
@@ -38,6 +45,12 @@
       el.setAttribute("title", translate(key, lang));
     });
 
+    // Placeholders des champs de saisie
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+      const key = el.getAttribute("data-i18n-placeholder");
+      el.setAttribute("placeholder", translate(key, lang));
+    });
+
     // Notifie les autres modules (settings, etc.)
     window.dispatchEvent(
       new CustomEvent("ztx:language-changed", { detail: { lang } })
@@ -54,6 +67,11 @@
     },
     t(key) {
       return translate(key, currentLang);
+    },
+
+    /** Message technique (terminal) : toujours en anglais. */
+    tech(key) {
+      return translate(key, TECH_LANG);
     },
     supported() {
       return SUPPORTED.slice();

@@ -23,9 +23,13 @@
     dd.offsetHeight;
     dd.style.animation = "";
 
-    // Positionne le dropdown sous le bouton cliqué
+    // Positionne le dropdown sous le bouton cliqué.
+    // getBoundingClientRect() renvoie des pixels VISUELS (déjà multipliés
+    // par le zoom de "Taille du logiciel"), alors que style.left attend des
+    // pixels de LAYOUT : on divise donc par le facteur d'échelle courant.
+    const scale = window.ZTXScale ? window.ZTXScale.get() : 1;
     const rect = anchor.getBoundingClientRect();
-    dd.style.left = rect.left + "px";
+    dd.style.left = rect.left / scale + "px";
 
     // Anti-débordement : si le dropdown sort à droite de la fenêtre,
     // on le décale vers la gauche pour rester dans le cadre.
@@ -33,7 +37,7 @@
       const dropRect = dd.getBoundingClientRect();
       const overflow = dropRect.right - (window.innerWidth - 10);
       if (overflow > 0) {
-        dd.style.left = Math.max(10, rect.left - overflow) + "px";
+        dd.style.left = Math.max(10, rect.left - overflow) / scale + "px";
       }
     });
 

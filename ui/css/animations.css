@@ -70,7 +70,7 @@ html[data-premium="on"] .ripple {
   overflow: hidden;
 }
 
-/* ---------- Fade in de la card de bienvenue ---------- */
+/* ---------- Fade-up : éditeur de type, lignes de terminal, modale ---------- */
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -81,10 +81,6 @@ html[data-premium="on"] .ripple {
     transform: translateY(0);
   }
 }
-.welcome-card {
-  animation: fade-up var(--dur-slow) var(--ease) both;
-}
-
 /* ---------- Transition douce du thème global ---------- */
 html {
   transition: background var(--dur-slow) var(--ease);

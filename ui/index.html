@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZTX</title>
 
-  <!-- Styles : ordre volontaire (variables -> base -> composants -> thèmes -> effets -> animations -> compact) -->
+  <!-- Styles : ordre volontaire (variables -> base -> composants -> thèmes -> effets -> animations -> compact -> zone de travail) -->
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/themes.css" />
   <link rel="stylesheet" href="css/liquid-glass.css" />
   <link rel="stylesheet" href="css/animations.css" />
   <link rel="stylesheet" href="css/compact.css" />
+  <link rel="stylesheet" href="css/workspace.css" />
 </head>
 <body>
   <!-- ============================================================
@@ -19,8 +20,12 @@
   <header class="titlebar glass-surface" role="banner">
     <!-- Bloc gauche : logo + onglets menu -->
     <div class="titlebar-left">
-      <div class="app-logo" aria-label="ZTX">
-        <img id="app-logo-img" src="img/ZTX_Logo_Default.png" alt="Logo ZTX" />
+      <!-- L'infobulle vit sur l'enveloppe : .app-logo a overflow:hidden
+           et rognerait le pseudo-élément. -->
+      <div class="logo-wrap tip-host" data-tip="ZTX">
+        <div class="app-logo" aria-label="ZTX">
+          <img id="app-logo-img" src="img/ZTX_Logo_Default.png" alt="Logo ZTX" />
+        </div>
       </div>
 
       <nav class="menubar" role="menubar" aria-label="Menu principal">
@@ -28,15 +33,16 @@
         <button class="menu-item" data-menu="settings" role="menuitem" data-i18n="menu.settings">Paramètres</button>
         <button class="menu-item" data-menu="terminal" role="menuitem" data-i18n="menu.terminal">Terminal</button>
         <button class="menu-item" data-menu="help"     role="menuitem" data-i18n="menu.help">Aide</button>
+        <!-- Connecteur : volontairement sans data-menu (aucun dropdown associé).
+             Le module connector.js se contente de journaliser dans le terminal. -->
+        <button class="menu-item" id="btn-connector"   role="menuitem" data-i18n="menu.connector">Connecteur</button>
       </nav>
     </div>
 
     <!-- Bloc central : zone déplaçable (drag natif pywebview).
          IMPORTANT : PAS de pointer-events:none ici, sinon pywebview ne
          reçoit pas le mousedown et le drag ne fonctionne pas. -->
-    <div class="titlebar-drag pywebview-drag-region" aria-hidden="true">
-      <span class="app-title">ZTX</span>
-    </div>
+    <div class="titlebar-drag pywebview-drag-region" aria-hidden="true"></div>
 
     <!-- Bloc droit : contrôles de fenêtre.
          Le bouton "agrandir" est masqué par défaut (data-maxbtn="off" sur <html>). -->
@@ -65,8 +71,17 @@
     </button>
   </div>
 
-  <!-- Menu Terminal (encore vide) -->
-  <div id="dropdown-terminal" class="dropdown glass-surface" role="menu" hidden></div>
+  <!-- Menu Terminal -->
+  <div id="dropdown-terminal" class="dropdown glass-surface" role="menu" hidden>
+    <button class="menu-action" data-action="console-toggle" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 3h12v10H2z M4.5 6.5L6.5 8l-2 1.5M8.5 10h3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <span data-i18n="terminal.toggle">Afficher / masquer</span>
+    </button>
+    <button class="menu-action" data-action="console-clear" role="menuitem">
+      <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3 5h10M6.5 5V3.5h3V5M5 5l.7 8h4.6L11 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <span data-i18n="terminal.clear">Effacer le journal</span>
+    </button>
+  </div>
 
   <!-- Menu Aide -->
   <div id="dropdown-help" class="dropdown glass-surface" role="menu" hidden>
@@ -120,6 +135,16 @@
       </div>
     </div>
 
+    <!-- Taille du logiciel : zoom global de l'interface -->
+    <div class="setting-row">
+      <label class="setting-label" data-i18n="settings.scale">Taille du logiciel</label>
+      <div class="stepper" role="group" aria-label="Taille du logiciel">
+        <button class="step-btn" id="scale-minus" type="button" aria-label="Réduire" title="Ctrl −">−</button>
+        <button class="step-value" id="scale-value" type="button" title="Ctrl 0">100 %</button>
+        <button class="step-btn" id="scale-plus" type="button" aria-label="Agrandir" title="Ctrl +">+</button>
+      </div>
+    </div>
+
     <div class="setting-divider" aria-hidden="true"></div>
 
     <!-- Bouton Agrandir : toggle qui affiche/cache le bouton dans la titlebar -->
@@ -156,19 +181,191 @@
   </div>
 
   <!-- ============================================================
-       Zone de contenu principale (placeholder pour l'instant)
+       ZONE DE TRAVAIL
+       1. Dossier cible  (bandeau)
+       2. Types de fichiers   ┐ duo collé
+       3. Suppression rapide  ┘
+       4. Terminal IHM (repliable)
        ============================================================ -->
   <main class="app-main" role="main">
-    <div class="welcome-card glass-surface">
-      <h1 class="welcome-title">ZTX</h1>
-      <p class="welcome-subtitle" data-i18n="welcome.subtitle">
-        Comprendre la machine plutôt que la masquer.
-      </p>
-      <p class="welcome-tag" data-i18n="welcome.tag">
-        Interface v0.1 — Luminescence AI
-      </p>
+    <div class="workspace">
+
+      <!-- ---------- 1. Dossier cible ---------- -->
+      <section class="panel panel-target glass-surface" aria-labelledby="target-title">
+        <div class="panel-bar">
+          <h2 class="panel-title" id="target-title" data-i18n="ws.target.title">Dossier cible</h2>
+          <span class="panel-state" id="target-state" data-state="idle" data-i18n="ws.target.none">Aucun dossier sélectionné</span>
+        </div>
+
+        <div class="target-row">
+          <div class="field">
+            <svg class="field-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M2 4a1 1 0 0 1 1-1h3l1.5 1.5H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4z" fill="none" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+            <input
+              id="target-input"
+              class="field-input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              aria-label="Chemin du dossier cible"
+              data-i18n-placeholder="ws.target.placeholder"
+              placeholder="D:\mon\dossier — ou utilisez Afficher" />
+            <button class="field-clear" id="target-clear" type="button" aria-label="Vider" title="Vider" hidden>
+              <svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <button class="btn" id="btn-browse" type="button" data-i18n="ws.target.browse">Afficher</button>
+          <button class="btn btn-primary" id="btn-target-ok" type="button" hidden data-i18n="ws.target.ok">OK</button>
+        </div>
+      </section>
+
+      <!-- ---------- 2 + 3. Duo collé ---------- -->
+      <div class="panel-duo">
+
+        <!-- ----- 2. Types de fichiers ----- -->
+        <section class="panel panel-types glass-surface" aria-labelledby="types-title">
+          <div class="panel-bar">
+            <h2 class="panel-title" id="types-title" data-i18n="ws.types.title">Types de fichiers</h2>
+            <span class="badge" id="types-count">0</span>
+          </div>
+
+          <div class="panel-body">
+            <ul class="type-list" id="type-list" role="listbox" aria-label="Types de fichiers surveillés"></ul>
+
+            <p class="hint hint-empty" id="types-empty" hidden data-i18n="ws.types.empty">
+              Aucun type enregistré — ajoutez-en un.
+            </p>
+
+            <!-- Éditeur inline : pas de prompt() natif (bloquerait le WebView) -->
+            <form class="type-editor" id="type-editor" hidden autocomplete="off">
+              <input
+                class="field-input" id="type-name" type="text" maxlength="24" spellcheck="false"
+                data-i18n-placeholder="ws.types.namePlaceholder" placeholder="Nom (ex. UE)" />
+              <input
+                class="field-input" id="type-ext" type="text" spellcheck="false"
+                data-i18n-placeholder="ws.types.extPlaceholder" placeholder=".uasset, .umap, .pak" />
+              <div class="type-editor-actions">
+                <button class="btn btn-sm" id="type-cancel" type="button" data-i18n="ws.common.cancel">Annuler</button>
+                <button class="btn btn-primary btn-sm" type="submit" data-i18n="ws.common.add">Ajouter</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel-foot">
+            <div class="foot-group">
+              <button class="btn btn-sm" id="btn-type-add" type="button">
+                <span class="btn-glyph" aria-hidden="true">+</span>
+                <span data-i18n="ws.types.add">Ajouter</span>
+              </button>
+              <button class="btn btn-sm" id="btn-type-remove" type="button" disabled>
+                <span class="btn-glyph" aria-hidden="true">−</span>
+                <span data-i18n="ws.types.remove">Supprimer</span>
+              </button>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-optimize" type="button" data-i18n="ws.types.optimize">Optimiser</button>
+          </div>
+        </section>
+
+        <!-- ----- 3. Suppression rapide ----- -->
+        <section class="panel panel-clean glass-surface" aria-labelledby="clean-title">
+          <div class="panel-bar">
+            <h2 class="panel-title" id="clean-title" data-i18n="ws.clean.title">Suppression rapide</h2>
+            <span class="badge badge-muted" id="clean-state" data-i18n="ws.clean.idle">En veille</span>
+          </div>
+
+          <div class="panel-body">
+            <!-- Seuil de taille -->
+            <div class="opt-row">
+              <div class="opt-text">
+                <span class="opt-label" data-i18n="ws.clean.threshold">Taille minimale</span>
+                <small class="opt-sub" data-i18n="ws.clean.thresholdSub">Seuil de détection d'un fichier lourd</small>
+              </div>
+              <div class="size-control">
+                <input class="field-input size-value" id="size-value" type="number" min="1" max="99999" step="1" value="100" aria-label="Valeur du seuil" />
+                <div class="segmented unit-picker" id="unit-picker" role="radiogroup" aria-label="Unité">
+                  <button class="seg-btn"        type="button" data-unit="Ko" role="radio" aria-checked="false">Ko</button>
+                  <button class="seg-btn active" type="button" data-unit="Mo" role="radio" aria-checked="true">Mo</button>
+                  <button class="seg-btn"        type="button" data-unit="Go" role="radio" aria-checked="false">Go</button>
+                  <button class="seg-btn"        type="button" data-unit="To" role="radio" aria-checked="false">To</button>
+                </div>
+              </div>
+            </div>
+
+            <p class="hint" id="size-hint">Les fichiers de 100 Mo ou plus seront détectés.</p>
+
+            <div class="opt-divider" aria-hidden="true"></div>
+
+            <!-- Interrupteur : confirmation avant suppression -->
+            <div class="opt-row">
+              <div class="opt-text">
+                <span class="opt-label" data-i18n="ws.clean.confirm">Confirmer avant suppression</span>
+                <small class="opt-sub" id="confirm-sub" data-i18n="ws.clean.confirmOn">La liste des fichiers trouvés s'affiche avant toute action.</small>
+              </div>
+              <label class="switch" aria-label="Confirmer avant suppression">
+                <input type="checkbox" id="confirm-toggle" checked />
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-foot panel-foot-end">
+            <button class="btn btn-danger btn-sm" id="btn-quick-delete" type="button" data-i18n="ws.clean.run">
+              Lancer la suppression rapide
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ---------- 4. Terminal IHM ---------- -->
+      <section class="panel panel-console glass-surface" id="console-panel" data-open="on">
+        <button class="console-bar" id="console-toggle" type="button" aria-expanded="true" aria-controls="console-body">
+          <svg class="chevron" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+            <path d="M4 2.5L8 6l-4 3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="panel-title" data-i18n="ws.console.title">Terminal</span>
+          <span class="console-sub" data-i18n="ws.console.sub">Retour d'exécution</span>
+          <span class="badge badge-muted" id="console-count">0</span>
+        </button>
+
+        <div class="console-body" id="console-body">
+          <ol class="console-lines" id="console-lines" aria-live="polite"></ol>
+          <div class="console-foot">
+            <button class="btn btn-xs" id="btn-console-clear" type="button" data-i18n="ws.console.clear">Effacer</button>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
+
+  <!-- ============================================================
+       Modale : confirmation de suppression
+       (remplace confirm() natif, qui figerait le WebView)
+       ============================================================ -->
+  <div class="modal-backdrop" id="delete-modal" hidden>
+    <div class="modal glass-surface" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 class="modal-title" id="modal-title" data-i18n="ws.modal.title">Fichiers détectés</h2>
+        <button class="icon-btn" id="modal-close" type="button" aria-label="Fermer">
+          <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <p class="modal-sub" id="modal-sub"></p>
+
+      <ol class="modal-list" id="modal-list"></ol>
+
+      <div class="modal-foot">
+        <span class="modal-total" id="modal-total"></span>
+        <div class="modal-actions">
+          <button class="btn btn-sm" id="modal-cancel" type="button" data-i18n="ws.common.cancel">Annuler</button>
+          <button class="btn btn-danger btn-sm" id="modal-confirm" type="button" data-i18n="ws.modal.confirm">Tout supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ============================================================
        Scripts : ordre volontaire, du plus bas niveau au plus haut
@@ -186,6 +383,8 @@
   <!-- Modules utilitaires -->
   <script src="js/storage.js"></script>
   <script src="js/i18n.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/format.js"></script>
 
   <!-- Gestionnaires de features -->
   <script src="js/theme-manager.js"></script>
@@ -193,11 +392,19 @@
   <script src="js/premium.js"></script>
   <script src="js/compact-mode.js"></script>
   <script src="js/max-button.js"></script>
+  <script src="js/ui-scale.js"></script>
   <script src="js/window-controls.js"></script>
   <script src="js/menu.js"></script>
   <script src="js/file-menu.js"></script>
   <script src="js/help-menu.js"></script>
   <script src="js/settings.js"></script>
+
+  <!-- Zone de travail (le terminal d'abord : les autres modules y écrivent) -->
+  <script src="js/console.js"></script>
+  <script src="js/connector.js"></script>
+  <script src="js/target-folder.js"></script>
+  <script src="js/file-types.js"></script>
+  <script src="js/quick-delete.js"></script>
 
   <!-- Point d'entrée -->
   <script src="js/app.js"></script>
