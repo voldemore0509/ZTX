@@ -1,183 +1,167 @@
-# ZTX — Interface v0.3
+# ZTX — CKitastam
 
-Interface locale du logiciel **ZTX** (Luminescence AI).
-Fenêtre native WebView2 lancée par **pywebview** — aucune ouverture de navigateur.
+Interface de bureau Windows en **C++17 natif**, conçue pour rester légère : Win32 pour les fenêtres et les contrôles, GDI/GDI+ pour le dessin, sans Qt, navigateur embarqué ni framework d’interface supplémentaire.
 
-## Structure
+Cette version prépare l’interface du logiciel. Le bouton **Nettoyer** est volontairement sans action : aucun moteur de nettoyage n’est connecté, aucun dossier n’est analysé et aucun fichier n’est supprimé. Le journal affiche uniquement les événements de l’interface et les éventuelles erreurs rencontrées.
 
-```
-ui/
-├── ztx.py                  ← launcher Python (à lancer)
-├── requirements.txt        ← 1 dépendance : pywebview
-├── index.html
-├── css/
-│   ├── main.css
-│   ├── themes.css
-│   ├── liquid-glass.css
-│   ├── animations.css
-│   ├── compact.css
-│   └── workspace.css       ← zone de travail (chargé en dernier)
-├── js/
-│   ├── storage.js          ← persistance localStorage
-│   ├── i18n.js             ← data-i18n / -title / -placeholder
-│   ├── bridge.js           ← accès unique à window.pywebview.api
-│   ├── format.js           ← tailles, heure, extensions
-│   ├── ui-scale.js         ← "Taille du logiciel" (zoom global)
-│   ├── theme-manager.js · liquid-glass-manager.js · premium.js
-│   ├── compact-mode.js · max-button.js · window-controls.js
-│   ├── menu.js · file-menu.js · help-menu.js · settings.js
-│   ├── console.js          ← terminal IHM
-│   ├── connector.js        ← bouton Connecteur (inerte)
-│   ├── target-folder.js    ← rubrique 1 : dossier cible
-│   ├── file-types.js       ← rubrique 2 : types de fichiers
-│   ├── quick-delete.js     ← rubrique 3 : suppression rapide + modale
-│   ├── app.js              ← point d'entrée
-│   └── locales/{fr,en,es,zh,ja,vi,lo,hi}.js
-└── img/
-    ├── ZTX_Logo_Default.png
-    └── ZTX_Logo_Primium.png
+## Compiler avec MSYS2
+
+Prérequis : Windows 10/11 64 bits et MSYS2. Ouvrez le terminal **MSYS2 UCRT64**, puis installez les outils :
+
+```sh
+pacman -S --needed mingw-w64-ucrt-x86_64-gcc make
 ```
 
-## Lancer
+Depuis le dossier du projet :
 
-**1. Installer la dépendance** (une seule fois) :
-```
-pip install -r requirements.txt
-```
-
-**2. Lancer** :
-```
-python ztx.py
+```sh
+cd /d/programmation/CKitastam/ZTX/ui
+make -j
+./build/ZTX.exe
 ```
 
-**Debug** : DevTools activées si la variable `ZTX_DEBUG=1` est présente.
-PowerShell : `$env:ZTX_DEBUG=1 ; python ztx.py`
+La compilation produit `build/ZTX.exe`. Le logo, l’icône et le manifeste Windows sont intégrés à l’exécutable. **Seul ce fichier est nécessaire pour distribuer l’application** sur une machine Windows compatible ; MSYS2 et le dossier `img` ne sont pas requis à l’exécution.
 
----
+### Depuis PowerShell
 
-## Zone de travail
+Une fois le compilateur UCRT64 installé, le script fourni permet également de compiler sans `make` :
 
-Quatre rubriques empilées dans `<main class="app-main">` :
-
-| # | Rubrique | Contenu | Module |
-|---|---|---|---|
-| 1 | **Dossier cible** | Champ de saisie + bouton *Afficher* (sélecteur natif, dossiers uniquement). Le bouton **OK** n'apparaît que si la saisie diffère du chemin déjà validé : c'est lui qui confirme et met à jour la cible. | `target-folder.js` |
-| 2 | **Types de fichiers** | Liste de presets `{ nom, extensions }` — livré avec `UE (.uasset .umap .pak .ubulk)`. Ajout via éditeur inline, suppression du type sélectionné, bouton *Optimiser*. | `file-types.js` |
-| 3 | **Suppression rapide** | Seuil (valeur + unité Ko/Mo/Go/To, 100 Mo par défaut), interrupteur *Confirmer avant suppression*, bouton de lancement (**sans action**, cf. ci-dessous). | `quick-delete.js` |
-| 4 | **Terminal** | Journal IHM repliable (info / ok / warn / err), horodaté, plafonné à 400 lignes. Ouvert par défaut, état persisté. | `console.js` |
-
-Les rubriques 2 et 3 forment un duo collé (`.panel-duo`) : bordure partagée, rayons
-plats sur la jointure. La zone de travail n'a **aucune largeur maximale** : en
-fenêtre maximisée elle occupe tout l'écran.
-
-Barre de titre : plus de titre centré (la zone reste déplaçable) ; le nom du
-logiciel apparaît en infobulle au survol du logo.
-
-### Suppression rapide — deux verrous
-
-**1. `ENGINE_WIRED = false`** (en tête de `js/quick-delete.js`)
-Le bouton *Lancer la suppression rapide* ne déclenche **aucune action** : ni scan,
-ni modale, ni appel Python. Il écrit une seule ligne dans le terminal. Le moteur
-sera écrit à la main ; le parcours ci-dessous est prêt et se rebranche en passant
-ce drapeau à `true`.
-
-```
-Lancer  →  scan_large_files()          (Python, LECTURE SEULE)
-        →  interrupteur ON  : modale listant les fichiers trouvés
-           interrupteur OFF : enchaîne directement
-        →  delete_files()               (Python, VERROUILLÉ)
+```powershell
+.\build.ps1
+.\build\ZTX.exe
 ```
 
-Pour dérouler ce parcours sans toucher au drapeau, depuis DevTools
-(`ZTX_DEBUG=1`, F12) : `ZTXQuickDelete.run()`.
+Si MSYS2 est installé ailleurs que dans `C:\msys64` :
 
-**2. `DELETION_ENABLED = False`** (en tête de `ztx.py`)
-Second verrou, côté Python : `delete_files()` ne supprime rien, il valide les
-chemins, calcule l'espace qui *serait* libéré et renvoie le plan à l'UI.
+```powershell
+.\build.ps1 -Msys2Root 'D:\msys64'
+```
 
-### Aucune boîte de dialogue JS
+Pour une compilation de débogage :
 
-`alert()`, `confirm()` et `prompt()` figent WebView2 : l'extension ne reçoit plus
-aucun événement. L'ajout d'un type passe donc par un éditeur inline et la
-confirmation de suppression par une modale maison (`#delete-modal`).
+```powershell
+.\build.ps1 -Configuration Debug
+```
 
----
+### Avec CMake, en option
 
-## API Python exposée à JavaScript
+Dans le terminal UCRT64 :
 
-`ZTXApi` est accessible côté JS via `window.pywebview.api`, toujours à travers
-`ZTXBridge.call(...)` qui normalise les retours en `{ ok, ... }`.
+```sh
+pacman -S --needed mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-ninja
+cmake -S . -B build-cmake -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build-cmake
+./build-cmake/ZTX.exe
+```
 
-| Méthode | Rôle |
-|---|---|
-| `minimize()` · `toggle_maximize()` · `close()` | Contrôles de fenêtre |
-| `open_local_folder()` | Ouvre l'explorateur sur le dossier de `ztx.py` |
-| `open_mailto(address, subject)` | Client mail par défaut |
-| `pick_folder()` | Sélecteur natif, **dossiers uniquement** |
-| `inspect_folder(path)` | Valide un chemin saisi à la main (+ compte superficiel) |
-| `scan_large_files(path, min_bytes, extensions, limit)` | Parcours récursif, lecture seule |
-| `delete_files(paths)` | Suppression — verrouillée par `DELETION_ENABLED` |
-| `optimize(path, presets)` | Stub réservé au futur moteur |
-| `ping()` | Sanity check DevTools |
+Utilisez un dossier de compilation distinct pour CMake, comme ci-dessus, afin de conserver les sorties des différents outils séparées.
 
-Garde-fous du scan : `SCAN_RESULT_LIMIT` (500 fichiers renvoyés à l'UI, le compte
-réel reste exact) et `SCAN_FILE_BUDGET` (400 000 fichiers inspectés maximum —
-protège d'un scan lancé par erreur sur `C:\` entier).
+## Utilisation
 
----
+- **Fenêtre verticale** avec boutons de réduction et de fermeture, et adaptation à la mise à l’échelle Windows.
+- **Logo ZTX en haut à gauche** : animation discrète au survol, infobulle « Logo ZTX » après une courte attente et accès aux informations du logiciel au clic.
+- **Fichier** : sélection d’un dossier et fermeture de l’application.
+- **Paramètres** : apparence, langue, animations et Liquid Glass.
+- **Aide** : présentation de ZTX et rappel des raccourcis.
+- **Configuration** : valeur initiale de **100 Mo**, saisie numérique et unités `o`, `Ko`, `Mo`, `Go`, `To`, `Po`. Les libellés deviennent `B`, `KB`, `MB`, `GB`, `TB`, `PB` en anglais.
+- **Répertoire** : saisie ou collage d’un chemin ; **Parcourir** ouvre le sélecteur de dossiers Windows.
+- **Nettoyage** : bouton **Nettoyer** réservé au futur moteur et zone de sortie actuellement vide.
+- **Journal d’erreurs** : événements horodatés, informations de fonctionnement de l’interface et erreurs éventuelles. Il s’agit d’une zone de lecture, pas d’un interpréteur de commandes.
 
-## Taille du logiciel (zoom global)
+Les chemins et la taille saisis ne déclenchent aucun traitement. Ils ne sont pas enregistrés entre deux lancements.
 
-Réglage `− 100 % +` dans **Paramètres**, de 70 % à 160 % par pas de 10, persisté.
-Raccourcis : `Ctrl +`, `Ctrl −`, `Ctrl 0`. Un clic sur la valeur remet à 100 %.
+### Préférences
 
-Implémentation : propriété CSS `zoom` posée sur `<html>` (`js/ui-scale.js`).
+Les réglages s’appliquent immédiatement. Ils sont enregistrés à la fermeture de la fenêtre des paramètres, y compris avec la croix ou la touche `Échap`.
 
-> **Règle à respecter dans tout nouveau CSS : aucune unité `vh`/`vw` dans le
-> layout.** Sous `zoom`, Chromium recalcule les *pourcentages* par rapport au
-> viewport zoomé, mais **pas** les unités de viewport : un `height: 100vh`
-> déborderait de la fenêtre dès 110 %. Le layout est donc en flex + `%`.
+| Réglage | Choix et comportement | Valeur initiale |
+| --- | --- | --- |
+| Apparence | Thème sombre ou clair | Sombre |
+| Langue | Français ou anglais | Français |
+| Animations | Transitions légères au survol et retour visuel au clic | Activées |
+| Liquid Glass | Transparence et espacement de l’interface | 50 % |
 
-Corollaire côté JS : `getBoundingClientRect()` renvoie des pixels *visuels*
-(multipliés par le zoom) alors que `style.left` attend des pixels de *layout*.
-Les deux endroits concernés (`menu.js`, ripple d'`app.js`) divisent par
-`ZTXScale.get()`.
+**Liquid Glass** parcourt les états suivants :
 
-## Internationalisation
+- **À gauche, 0 %** : opacité d’environ 70 %, avec des espacements plus généreux.
+- **Au centre, 50 %** : équilibre entre transparence et compacité.
+- **À droite, 100 %** : fenêtre opaque et espacements compacts.
 
-8 langues (`fr, en, es, zh, ja, vi, lo, hi`). Trois attributs sont traduits
-automatiquement : `data-i18n` (texte), `data-i18n-title` (tooltip) et
-`data-i18n-placeholder` (champ de saisie). Les textes dynamiques utilisent des
-jetons `{path}`, `{count}`, `{size}`… remplacés côté module.
+L’effet utilise la transparence native de Windows sur **l’ensemble de la fenêtre**, texte et contrôles compris. Ce choix limite les dépendances et le coût du rendu ; il ne simule pas une réfraction ni un flou Acrylic. La fenêtre des paramètres reste opaque pour préserver sa lisibilité.
 
-**Le terminal parle anglais**, quelle que soit la langue de l'interface :
-convention du métier pour un journal d'exécution. Les clés `log.*` ne vivent donc
-que dans `locales/en.js` et passent par `ZTXi18n.tech(key)` — jamais `t(key)`.
-Les tailles y suivent la même règle (`ZTXFormat.techBytes/techCount` → `MB`,
-`1,234`), alors que l'interface utilise `o/Ko/Mo/Go/To` en français et
-`B/KB/MB/GB/TB` ailleurs. La clé interne (`data-unit`) ne change jamais.
+Les préférences sont conservées dans :
 
-## Détection du bridge
+```text
+%LOCALAPPDATA%\CKitastam\ZTX\settings.ini
+```
 
-`window.pywebview` **n'existe pas** au `DOMContentLoaded` : pywebview l'injecte
-puis émet `pywebviewready`. Tester le bridge au démarrage le déclarait absent à
-tort (le terminal affichait « Bridge Python absent » en pleine fenêtre native).
-`ZTXBridge.ready()` attend l'événement — avec un filet par scrutation — avant de
-conclure.
+L’enregistrement remplace le fichier de configuration après écriture dans un fichier temporaire. Les valeurs absentes ou invalides utilisent les valeurs par défaut ; le curseur est borné entre 0 et 100. Une erreur de sauvegarde apparaît dans le journal.
 
-## Fallback navigateur
+### Raccourcis
 
-Ouvert hors pywebview (Live Server, double-clic), l'UI reste utilisable pour
-itérer sur le design : après expiration, le terminal l'annonce en WARN et les
-actions natives (sélecteur de dossier, scan) sont neutralisées proprement au lieu
-de planter.
+| Raccourci | Action |
+| --- | --- |
+| `Ctrl+O` | Choisir un dossier |
+| `Ctrl+,` | Ouvrir les paramètres |
+| `F1` | Afficher l’aide / les informations |
+| `Alt+F4` | Fermer la fenêtre active |
+| `Tab` / `Maj+Tab` | Parcourir les contrôles |
+| `Espace` | Activer le bouton sélectionné |
+| Flèches, `Début`, `Fin` | Ajuster le curseur lorsqu’il a le focus |
+| `Échap` | Fermer les paramètres |
 
-## Intégration future avec le backend C
+## Conception et ressources
 
-| Option | Idée |
-|---|---|
-| **Python garde le shell** | `ztx.py` reste le launcher. Un module Python appelle le binaire C via `ctypes` ou `subprocess` et route les résultats vers l'UI. |
-| **Migration C pur** | Remplacer pywebview par [libwebview](https://github.com/webview/webview) (header-only C). L'UI HTML reste identique, on réécrit le launcher en C. |
+- **Boucle événementielle** : l’application attend les messages Windows ; aucune boucle de rendu permanente.
+- **Animations temporaires** : les minuteurs servent uniquement aux transitions et s’arrêtent une fois celles-ci terminées.
+- **Ressources maîtrisées** : objets graphiques, images et interfaces COM libérés par leurs propriétaires ; tampons de dessin réutilisés pour limiter les allocations et le scintillement.
+- **Journal borné** : capacité de 32 768 caractères. Le contenu ancien est effacé lorsque la prochaine entrée dépasserait cette limite.
+- **Compilation Release** : optimisation de taille, optimisation à l’édition des liens et suppression des sections inutilisées. Les bibliothèques d’exécution GCC/C++ sont liées statiquement ; les bibliothèques système restent fournies par Windows.
+- **Logo intégré et optimisé** : les ressources de petite taille sont dérivées du logo fourni. L’original `img/logo ZTX.png` est conservé intact.
+- **Aucun privilège administrateur demandé** : l’application s’exécute avec les droits de l’utilisateur courant.
 
-Les points d'entrée à brancher côté C sont déjà isolés : `scan_large_files`,
-`delete_files` et `optimize`.
+Le poids final et la mémoire consommée dépendent du compilateur, de la configuration et de l’environnement Windows ; aucune valeur arbitraire n’est annoncée ici.
+
+## Organisation du projet
+
+| Fichier | Rôle |
+| --- | --- |
+| `src/main.cpp` | Fenêtre principale, dessin, contrôles, sélection de dossier, traduction et paramètres |
+| `src/preferences.h` | Contrat des préférences et valeurs par défaut |
+| `src/preferences.cpp` | Lecture, validation et sauvegarde des préférences |
+| `resources/ztx.rc` | Intégration des ressources dans l’exécutable |
+| `resources/resource.h` | Identifiants des ressources |
+| `resources/ztx.manifest` | Compatibilité Windows, comportement DPI et droits d’exécution |
+| `resources/logo.png`, `resources/ztx.ico` | Logo d’interface et icône Windows optimisés |
+| `img/logo ZTX.png` | Logo original fourni |
+| `Makefile` | Compilation MSYS2 UCRT64 |
+| `build.ps1` | Compilation depuis PowerShell |
+| `CMakeLists.txt` | Configuration CMake facultative |
+| `tests/preferences_test.cpp`, `tests/run.ps1` | Tests isolés de la persistance des préférences |
+
+## Tests automatisés
+
+Avec le compilateur MSYS2 UCRT64 installé, lancez depuis PowerShell :
+
+```powershell
+.\tests\run.ps1
+```
+
+Le script accepte également `-Msys2Root 'D:\msys64'` et produit `build/preferences_test.exe`. Il compile avec les avertissements traités comme des erreurs, puis vérifie les valeurs par défaut, toutes les combinaisons de préférences, les bornes du curseur, les données invalides, les chemins Unicode et les échecs de sauvegarde.
+
+Les tests redirigent `LOCALAPPDATA` uniquement dans leur propre processus, vers un dossier temporaire créé pour eux. Ils ne lisent ni ne modifient les préférences réelles de l’utilisateur. Les fichiers de test connus sont nettoyés individuellement à la fin.
+
+## Vérification manuelle
+
+Après compilation, ce parcours permet de vérifier les principaux comportements :
+
+1. Lancez ZTX et contrôlez la disposition verticale, la valeur **100 Mo**, le logo et les menus.
+2. Saisissez un autre nombre, changez d’unité et collez un chemin contenant des espaces ou des caractères accentués.
+3. Ouvrez **Parcourir**, choisissez un dossier, puis rouvrez le sélecteur et annulez. Vérifiez que l’annulation conserve le chemin précédent.
+4. Cliquez sur **Nettoyer** : aucun traitement ne démarre et la sortie reste vide.
+5. Testez les deux thèmes et les deux langues, puis désactivez et réactivez les animations. Survolez aussi le logo jusqu’à l’apparition de l’infobulle.
+6. Déplacez Liquid Glass sur **0**, **50** et **100 %** ; vérifiez la transparence, les espacements et la lisibilité de la fenêtre des paramètres.
+7. Fermez les paramètres, relancez ZTX et vérifiez la conservation des préférences.
+8. Parcourez les contrôles au clavier et testez les raccourcis, la réduction et la fermeture. Vérifiez également le rendu avec la mise à l’échelle Windows utilisée sur votre écran.
+
+Cette liste décrit les vérifications à effectuer ; elle ne constitue pas un relevé automatique de tests réalisés.
